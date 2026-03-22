@@ -21,23 +21,24 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ) => {
-  const statusCode = err instanceof AppError ? err.statusCode : 500;
-  const message = err.message || "Internal Server Error";
+  const isOperational = err instanceof AppError;
+  const statusCode = isOperational ? err.statusCode : 500;
+  const clientMessage = isOperational ? err.message : "Internal Server Error";
 
-  // Log error
+  // Log error (always include real message for diagnostics)
   logger.error("Request error", {
     method: req.method,
     path: req.path,
     statusCode,
-    message,
+    message: err.message,
     stack: err.stack,
   });
 
-  // Send response
+  // Send response (hide internal details for unexpected errors)
   res.status(statusCode).json({
     status: "error",
     statusCode,
-    message,
+    message: clientMessage,
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 };
