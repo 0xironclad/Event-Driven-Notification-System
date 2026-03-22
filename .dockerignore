@@ -1,0 +1,16 @@
+node_modules
+dist
+npm-debug.log*
+pnpm-debug.log*
+.env
+.env.local
+.git
+.gitignore
+README.md
+PROJECT_OVERVIEW.md
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
