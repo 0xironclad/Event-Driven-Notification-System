@@ -1,47 +1,60 @@
-import express, { Express, Request, Response } from "express";
+import express, { Express } from "express";
 import dotenv from "dotenv";
+import { env } from "./config/env";
 import routes from "./api/routes";
 import { requestLogger } from "./middleware/requestLogger";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { logger } from "./utils/logger";
+import { connectDatabase, disconnectDatabase } from "./db/connection";
 
 dotenv.config();
-const { env } = require("./config/env");
 
 const app: Express = express();
 const PORT = env.PORT;
 
-// Middleware
+// Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Request logging
 app.use(requestLogger);
 
-// Root route
-app.get("/", (_req: Request, res: Response) => {
-  res.json({ message: "Event-Driven Notification System API" });
-});
-
 // API routes
 app.use("/api", routes);
 
-// Health check (also available at root level for Docker/K8s)
-app.get("/health", (_req: Request, res: Response) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-// 404 handler (must be after all routes)
+// 404 handler and error handler
 app.use(notFoundHandler);
-
-// Global error handler (must be last)
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  logger.info(`Server started`, {
-    port: PORT,
-    environment: env.NODE_ENV,
-  });
+async function startServer() {
+  try {
+    await connectDatabase();
+
+    app.listen(PORT, () => {
+      logger.info("Server started", {
+        port: PORT,
+        environment: env.NODE_ENV,
+      });
+    });
+  } catch (error: any) {
+    logger.error("Failed to start server", { error: error.message });
+    process.exit(1);
+  }
+}
+
+// Graceful shutdown
+process.on("SIGTERM", async () => {
+  logger.info("SIGTERM received, shutting down gracefully");
+  await disconnectDatabase();
+  process.exit(0);
 });
+
+process.on("SIGINT", async () => {
+  logger.info("SIGINT received, shutting down gracefully");
+  await disconnectDatabase();
+  process.exit(0);
+});
+
+startServer();
 
 export default app;
