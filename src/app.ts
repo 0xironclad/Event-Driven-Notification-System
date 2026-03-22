@@ -1,12 +1,12 @@
 import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
-import { env } from "./config/env";
 import routes from "./api/routes";
 import { requestLogger } from "./middleware/requestLogger";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { logger } from "./utils/logger";
 
 dotenv.config();
+const { env } = require("./config/env");
 
 const app: Express = express();
 const PORT = env.PORT;
