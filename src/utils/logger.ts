@@ -20,9 +20,23 @@ class Logger {
 
     // In development, pretty print the log entry
     if (env.NODE_ENV === "development") {
-      console.log(`[${level}] ${message}`, meta || "");
+      const formattedMessage = `[${level}] ${message}`;
+      if (level === LogLevel.ERROR) {
+        console.error(formattedMessage, meta || "");
+      } else if (level === LogLevel.WARN) {
+        console.warn(formattedMessage, meta || "");
+      } else {
+        console.log(formattedMessage, meta || "");
+      }
     } else {
-      console.log(JSON.stringify(logEntry));
+      const serialized = JSON.stringify(logEntry);
+      if (level === LogLevel.ERROR) {
+        console.error(serialized);
+      } else if (level === LogLevel.WARN) {
+        console.warn(serialized);
+      } else {
+        console.log(serialized);
+      }
     }
   }
 
