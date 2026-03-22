@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { env } from "../../config/env";
 
 export class HealthController {
   static async check(_req: Request, res: Response) {
@@ -7,7 +8,7 @@ export class HealthController {
       status: "ok",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || "development",
+      environment: env.NODE_ENV || "development",
     });
   }
 }
