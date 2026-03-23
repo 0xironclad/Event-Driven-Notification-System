@@ -1,15 +1,18 @@
 import { defineConfig } from "drizzle-kit";
-import { env } from "./src/config/env";
+import dotenv from "dotenv";
 
-export default defineConfig({
+
+dotenv.config();
+
+export default defineConfig({ 
   schema: "./src/db/schema.ts",
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    host: env.DB_HOST,
-    port: env.DB_PORT,
-    user: env.DB_USER,
-    password: env.DB_PASSWORD,
-    database: env.DB_NAME,
+    host: process.env.DB_HOST!,
+    port: Number(process.env.DB_PORT!),
+    user: process.env.DB_USER!,
+    password: process.env.DB_PASSWORD!,
+    database: process.env.DB_NAME!,
   },
 });

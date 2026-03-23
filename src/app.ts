@@ -19,6 +19,11 @@ app.use(express.urlencoded({ extended: true }));
 // Request logging
 app.use(requestLogger);
 
+// Root-level health check (for Docker/K8s/load balancers)
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 // API routes
 app.use("/api", routes);
 
@@ -26,34 +31,63 @@ app.use("/api", routes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+// Start server with database connection
+let server: ReturnType<typeof app.listen>;
+
 async function startServer() {
   try {
     await connectDatabase();
 
-    app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       logger.info("Server started", {
         port: PORT,
         environment: env.NODE_ENV,
       });
     });
+
+    // Handle server errors (EADDRINUSE, etc.)
+    server.on("error", async (error: NodeJS.ErrnoException) => {
+      logger.error("Server error", {
+        error: error.message,
+        code: error.code,
+      });
+
+      // Close DB connection before exiting
+      await disconnectDatabase();
+      process.exit(1);
+    });
   } catch (error: any) {
     logger.error("Failed to start server", { error: error.message });
+    await disconnectDatabase();
     process.exit(1);
   }
 }
 
 // Graceful shutdown
-process.on("SIGTERM", async () => {
-  logger.info("SIGTERM received, shutting down gracefully");
-  await disconnectDatabase();
-  process.exit(0);
-});
+async function gracefulShutdown(signal: string) {
+  logger.info(`${signal} received, shutting down gracefully`);
 
-process.on("SIGINT", async () => {
-  logger.info("SIGINT received, shutting down gracefully");
-  await disconnectDatabase();
-  process.exit(0);
-});
+  // Stop accepting new connections
+  if (server) {
+    server.close(async (err) => {
+      if (err) {
+        logger.error("Error closing server", { error: err.message });
+      } else {
+        logger.info("HTTP server closed");
+      }
+
+      // Close database connection after server stops
+      await disconnectDatabase();
+
+      // Let Node.js exit naturally
+    });
+  } else {
+    await disconnectDatabase();
+  }
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 startServer();
 
