@@ -27,12 +27,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # Uncomment when ready to use Redis
-  # redis:
-  #   image: redis:7
-  #   container_name: notification-redis
-  #   ports:
-  #     - "6379:6379"
+  redis:
+    image: redis:7
+    container_name: notification-redis
+    restart: always
+    ports:
+      - "6379:6379"
 
 volumes:
   postgres_data:
