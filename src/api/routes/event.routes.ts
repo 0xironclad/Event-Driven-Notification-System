@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { EventController } from "../controllers/event.controller";
 
-const router = Router();
+const router : Router = Router();
 
 // Wrap async controller to catch errors
 const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {

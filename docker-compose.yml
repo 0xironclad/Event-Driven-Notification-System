@@ -5,14 +5,17 @@ services:
     ports:
       - "8080:5000"
     volumes:
-      - .:/app # Sync everything including node_modules
+      - .:/app
+      - /app/node_modules
     depends_on:
       - db
     env_file:
       - .env
     environment:
       - DB_HOST=db
+      - DB_PORT=5432
       - DATABASE_URL=postgres://postgres:postgres@db:5432/ED-Notif-Sys
+      - REDIS_HOST=redis
 
   db:
     image: postgres:15

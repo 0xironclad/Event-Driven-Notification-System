@@ -5,7 +5,9 @@ import {
   text,
   timestamp,
   jsonb,
+  boolean,
   index,
+  unique,
 } from "drizzle-orm/pg-core";
 
 // Events table
@@ -55,6 +57,26 @@ export const notifications = pgTable(
   }),
 );
 
+
+// User preferences table
+export const userPreferences = pgTable(
+  "user_preferences",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: varchar("user_id", { length: 255 }).notNull(),
+    channel: varchar("channel", { length: 50 }).notNull(), // "email" | "sms"
+    enabled: boolean("enabled").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    userIdIdx: index("user_preferences_user_id_idx").on(table.userId),
+    userChannelUnique: unique("user_preferences_user_channel_unique").on(
+      table.userId,
+      table.channel
+    ),
+  })
+);
 
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
