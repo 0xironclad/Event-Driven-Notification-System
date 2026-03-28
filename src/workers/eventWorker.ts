@@ -3,8 +3,24 @@ import { redisConnection } from "../queue/connection";
 import { ProcessEventJobData } from "../queue/eventQueue";
 import { EventService } from "../services/event.service";
 import { NotificationService } from "../services/notification.service";
+import { PreferencesService } from "../services/preferences.service";
+import { getPreferences, setPreferences } from "../cache/userPreferencesCache";
 import { logger } from "../utils/logger";
 import { env } from "../config/env";
+
+// Check Redis first, fall back to DB on miss, then populate the cache.
+async function isChannelEnabled(userId: string, channel: string): Promise<boolean> {
+  let prefs = await getPreferences(userId);
+
+  if (!prefs) {
+    const dbPrefs = await PreferencesService.getByUserId(userId);
+    prefs = dbPrefs.map((p) => ({ channel: p.channel, enabled: p.enabled }));
+    await setPreferences(userId, prefs);
+  }
+
+  const match = prefs.find((p) => p.channel === channel);
+  return match ? match.enabled : true;
+}
 
 // Worker to process events from the queue
 export const eventWorker = new Worker<ProcessEventJobData>(
@@ -32,11 +48,23 @@ export const eventWorker = new Worker<ProcessEventJobData>(
         NotificationService.generateNotificationData(event);
 
       if (notificationData) {
-        await NotificationService.createNotification(notificationData);
-        logger.info("Notification created by worker", {
-          eventId,
-          channel: notificationData.channel,
-        });
+        const channelEnabled = event.userId
+          ? await isChannelEnabled(event.userId, notificationData.channel)
+          : true;
+
+        if (channelEnabled) {
+          await NotificationService.createNotification(notificationData);
+          logger.info("Notification created by worker", {
+            eventId,
+            channel: notificationData.channel,
+          });
+        } else { 
+          logger.info("Notification skipped: channel disabled by user preference", {
+            eventId,
+            userId: event.userId,
+            channel: notificationData.channel,
+          });
+        }
       }
 
       // Update event status to processed
