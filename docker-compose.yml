@@ -9,6 +9,7 @@ services:
       - /app/node_modules
     depends_on:
       - db
+      - redis
     env_file:
       - .env
     environment:
@@ -16,6 +17,23 @@ services:
       - DB_PORT=5432
       - DATABASE_URL=postgres://postgres:postgres@db:5432/ED-Notif-Sys
       - REDIS_HOST=redis
+
+  worker:
+    build: .
+    container_name: notification-worker
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+    command: pnpm dev:worker
 
   db:
     image: postgres:15
