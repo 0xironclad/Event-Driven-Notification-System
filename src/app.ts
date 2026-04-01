@@ -6,6 +6,7 @@ import { requestLogger } from "./middleware/requestLogger";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { logger } from "./utils/logger";
 import { connectDatabase, disconnectDatabase } from "./db/connection";
+import { closeQueue } from "./queue/eventQueue";
 
 dotenv.config();
 
@@ -76,12 +77,16 @@ async function gracefulShutdown(signal: string) {
         logger.info("HTTP server closed");
       }
 
+      // Close queue (this will close Redis connections managed by BullMQ)
+      await closeQueue();
+
       // Close database connection after server stops
       await disconnectDatabase();
 
       // Let Node.js exit naturally
     });
   } else {
+    await closeQueue();
     await disconnectDatabase();
   }
 }

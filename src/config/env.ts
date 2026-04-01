@@ -1,7 +1,7 @@
 import { z } from "zod";
-import dotenv from "dotenv"
+import dotenv from "dotenv";
 
-dotenv.config()
+dotenv.config();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "staging"]),
@@ -15,8 +15,8 @@ const envSchema = z.object({
   DB_PASSWORD: z.string(),
 
   // Redis
-  REDIS_HOST: z.string().optional(),
-  REDIS_PORT: z.coerce.number().int().positive().optional(),
+  REDIS_HOST: z.string(),
+  REDIS_PORT: z.coerce.number().int().positive(),
 
   // Queue
   QUEUE_CONCURRENCY: z.coerce.number().int().positive().default(5),

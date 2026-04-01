@@ -5,8 +5,10 @@
   "main": "dist/app.js",
   "scripts": {
     "dev": "nodemon",
+    "dev:worker": "nodemon --watch src --exec tsx src/worker.ts",
     "build": "tsc",
     "start": "node dist/app.js",
+    "start:worker": "node dist/worker.js",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -25,13 +27,16 @@
   "license": "ISC",
   "packageManager": "pnpm@10.30.3",
   "dependencies": {
+    "bullmq": "^5.71.0",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.45.1",
     "express": "^5.2.1",
+    "ioredis": "^5.10.1",
     "pg": "^8.20.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/express": "^5.0.6",
     "@types/node": "^22.15.5",
     "@types/pg": "^8.20.0",
@@ -39,6 +44,7 @@
     "@typescript-eslint/parser": "^8.29.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.20.0",
+    "globals": "^17.4.0",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",

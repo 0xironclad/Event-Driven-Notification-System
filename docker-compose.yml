@@ -5,14 +5,35 @@ services:
     ports:
       - "8080:5000"
     volumes:
-      - .:/app # Sync everything including node_modules
+      - .:/app
+      - /app/node_modules
     depends_on:
       - db
+      - redis
     env_file:
       - .env
     environment:
       - DB_HOST=db
+      - DB_PORT=5432
       - DATABASE_URL=postgres://postgres:postgres@db:5432/ED-Notif-Sys
+      - REDIS_HOST=redis
+
+  worker:
+    build: .
+    container_name: notification-worker
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+    command: pnpm dev:worker
 
   db:
     image: postgres:15
@@ -27,12 +48,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # Uncomment when ready to use Redis
-  # redis:
-  #   image: redis:7
-  #   container_name: notification-redis
-  #   ports:
-  #     - "6379:6379"
+  redis:
+    image: redis:7
+    container_name: notification-redis
+    restart: always
+    ports:
+      - "6379:6379"
 
 volumes:
   postgres_data:

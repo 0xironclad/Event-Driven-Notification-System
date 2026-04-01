@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { AppError } from "../../middleware/errorHandler";
 import { logger } from "../../utils/logger";
 import { EventService } from "../../services/event.service";
-import { NotificationService } from "../../services/notification.service";
+import { addEventToQueue } from "../../queue/eventQueue";
 
 export class EventController {
   static async create(req: Request, res: Response) {
@@ -29,12 +29,17 @@ export class EventController {
 
       logger.info("Event created", { eventId: event.id, type });
 
-      // Synchronous notification generation (Phase 1 approach)
-      await EventController.processEvent(event);
+      // Add to queue for async processing (Phase 2 approach)
+      await addEventToQueue({
+        eventId: event.id,
+        type: event.type,
+        userId: event.userId || undefined,
+      });
 
       res.status(201).json({
         success: true,
         data: event,
+        message: "Event created and queued for processing",
       });
     } catch (error: any) {
       logger.error("Failed to create event", {
@@ -43,35 +48,6 @@ export class EventController {
         userId,
       });
       throw new AppError("Failed to create event", 500);
-    }
-  }
-
-  // Synchronous event processing (will be moved to queue in Phase 2)
-  private static async processEvent(event: any) {
-    try {
-      logger.info("Processing event synchronously", { eventId: event.id });
-
-      // Generate notification data
-      const notificationData =
-        NotificationService.generateNotificationData(event);
-
-      if (notificationData) {
-        // Create notification using service
-        await NotificationService.createNotification(notificationData);
-        logger.info("Notification created", {
-          eventId: event.id,
-          channel: notificationData.channel,
-        });
-      }
-
-      // Update event status using service
-      await EventService.updateEventStatus(event.id, "processed");
-    } catch (error: any) {
-      logger.error("Failed to process event", {
-        error: error.message,
-        eventId: event.id,
-      });
-      // Don't throw - event is created, processing failed
     }
   }
 }
