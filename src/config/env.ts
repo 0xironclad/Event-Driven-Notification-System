@@ -20,6 +20,17 @@ const envSchema = z.object({
 
   // Queue
   QUEUE_CONCURRENCY: z.coerce.number().int().positive().default(5),
+
+  // Cache
+  NOTIFICATIONS_CACHE_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(300),
+
+  // Rate limiting (POST /api/events)
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
 });
 
 export const env = envSchema.parse(process.env);

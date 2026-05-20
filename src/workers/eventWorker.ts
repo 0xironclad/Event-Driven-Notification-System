@@ -5,6 +5,7 @@ import { EventService } from "../services/event.service";
 import { NotificationService } from "../services/notification.service";
 import { PreferencesService } from "../services/preferences.service";
 import { getPreferences, setPreferences } from "../cache/userPreferencesCache";
+import { invalidate as invalidateNotificationsCache } from "../cache/notificationsCache";
 import { logger } from "../utils/logger";
 import { env } from "../config/env";
 
@@ -54,11 +55,12 @@ export const eventWorker = new Worker<ProcessEventJobData>(
 
         if (channelEnabled) {
           await NotificationService.createNotification(notificationData);
+          await invalidateNotificationsCache(notificationData.userId);
           logger.info("Notification created by worker", {
             eventId,
             channel: notificationData.channel,
           });
-        } else { 
+        } else {
           logger.info("Notification skipped: channel disabled by user preference", {
             eventId,
             userId: event.userId,

@@ -1,8 +1,29 @@
+import { desc, eq } from "drizzle-orm";
 import { db } from "../db/connection";
 import { notifications, NewNotification, Notification } from "../db/schema";
 import { logger } from "../utils/logger";
 
 export class NotificationService {
+  static async getRecentNotifications(
+    userId: string,
+    limit: number,
+  ): Promise<Notification[]> {
+    try {
+      return await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt))
+        .limit(limit);
+    } catch (error: any) {
+      logger.error("Database error fetching recent notifications", {
+        error: error.message,
+        userId,
+      });
+      throw error;
+    }
+  }
+
   static async createNotification(
     data: NewNotification,
   ): Promise<Notification> {
